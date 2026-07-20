@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfil de Vento — Pipa (0–500 m)</title>
+<style>
+  :root{
+    --ceu-alto:#1c4e9c;
+    --ceu-baixo:#5fa8e6;
+    --papel:#ffffff;
+    --tinta:#17233a;
+    --tinta-suave:#5a6a85;
+    --pipa-verde:#18a05a;
+    --pipa-amarelo:#e6a817;
+    --pipa-vermelho:#d8402c;
+    --linha:#dde6f2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+    background:linear-gradient(180deg,var(--ceu-alto) 0%,var(--ceu-baixo) 100%);
+    min-height:100vh;
+    color:var(--tinta);
+    padding:16px;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+
+  header{color:#fff;text-align:center;margin:8px 0 18px}
+  header h1{font-size:1.5rem;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:10px}
+  header h1 svg{flex:0 0 auto}
+  header p{opacity:.9;font-size:.85rem;margin-top:4px}
+
+  .card{
+    background:var(--papel);
+    border-radius:14px;
+    padding:16px;
+    box-shadow:0 8px 30px rgba(10,30,70,.25);
+    margin-bottom:14px;
+  }
+
+  .controles{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+  .campo{display:flex;flex-direction:column;gap:4px}
+  .campo label{font-size:.72rem;font-weight:600;color:var(--tinta-suave);text-transform:uppercase;letter-spacing:.5px}
+  .campo input,.campo select{
+    padding:9px 10px;border:1px solid var(--linha);border-radius:8px;
+    font-size:.95rem;font-family:inherit;background:#f8fafd;color:var(--tinta);
+  }
+  #lat,#lon{width:150px}
+  button#buscar{
+    padding:11px 22px;border:none;border-radius:8px;cursor:pointer;
+    background:var(--pipa-verde);color:#fff;font-size:1rem;font-weight:700;
+    font-family:inherit;
+  }
+  button#buscar:disabled{background:#9db3cd;cursor:wait}
+  button#buscar:hover:not(:disabled){filter:brightness(1.08)}
+  button#gps{
+    padding:9px 14px;border:1px solid var(--linha);border-radius:8px;cursor:pointer;
+    background:#f8fafd;color:var(--tinta);font-size:.88rem;font-family:inherit;font-weight:600;
+  }
+  button#gps:disabled{opacity:.5;cursor:wait}
+  button#gps:hover:not(:disabled){background:#eef4fb}
+
+  #status{font-size:.85rem;color:var(--tinta-suave);margin-top:10px;min-height:1.2em}
+  #status.erro{color:var(--pipa-vermelho);font-weight:600}
+
+  .meta{font-size:.8rem;color:var(--tinta-suave);margin-bottom:10px;line-height:1.5}
+  .meta b{color:var(--tinta)}
+
+  table{width:100%;border-collapse:collapse;font-size:.92rem}
+  th{
+    text-align:center;font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;
+    color:var(--tinta-suave);padding:6px 4px;border-bottom:2px solid var(--linha);
+  }
+  td{padding:9px 4px;text-align:center;border-bottom:1px solid var(--linha);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td.alt{font-weight:700;font-size:1rem;white-space:nowrap}
+  td.alt small{display:block;font-weight:400;font-size:.68rem;color:var(--tinta-suave)}
+  td.vel{font-weight:700;font-size:1.05rem;white-space:nowrap}
+  td.vel small{font-weight:400;font-size:.7rem;color:var(--tinta-suave)}
+  .dir-num{font-size:.8rem;color:var(--tinta-suave);white-space:nowrap}
+  .conf{font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap}
+  .conf.alta{background:#e2f6ea;color:var(--pipa-verde)}
+  .conf.media{background:#fdf3dc;color:#a97a08}
+  .conf.baixa{background:#fbe5e1;color:var(--pipa-vermelho)}
+
+  .seta-pipa{display:inline-block}
+
+  details{margin-top:14px}
+  summary{cursor:pointer;font-size:.85rem;font-weight:600;color:var(--tinta-suave)}
+  .modelos-tab{overflow-x:auto;margin-top:8px}
+  .modelos-tab table{font-size:.78rem;min-width:520px}
+  .modelos-tab td{padding:5px 4px}
+
+  .legenda{font-size:.75rem;color:var(--tinta-suave);line-height:1.6;margin-top:12px}
+  .legenda b{color:var(--tinta)}
+
+  footer{text-align:center;color:#fff;opacity:.75;font-size:.72rem;margin-top:10px}
+
+  @media(max-width:520px){
+    #lat,#lon{width:130px}
+    .dir-num{font-size:.72rem}
+    td{padding:8px 2px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>
+    <svg width="26" height="30" viewBox="0 0 26 30" aria-hidden="true">
+      <polygon points="13,1 25,12 13,23 1,12" fill="#e6a817" stroke="#fff" stroke-width="1.4"/>
+      <line x1="13" y1="1" x2="13" y2="23" stroke="#fff" stroke-width="1"/>
+      <line x1="1" y1="12" x2="25" y2="12" stroke="#fff" stroke-width="1"/>
+      <path d="M13,23 q-3,3 0,4.5 q3,1.5 0,2.5" stroke="#fff" stroke-width="1.3" fill="none"/>
+    </svg>
+    Perfil de Vento — Pipa
+  </h1>
+  <p>Solo até 500 m, camada por camada · ICON + GFS + ECMWF (Open-Meteo)</p>
+</header>
+
+<div class="card">
+  <div class="controles">
+    <div class="campo">
+      <label for="lat">Latitude</label>
+      <input id="lat" type="text" value="-23.47">
+    </div>
+    <div class="campo">
+      <label for="lon">Longitude</label>
+      <input id="lon" type="text" value="-46.56">
+    </div>
+    <div class="campo">
+      <label>&nbsp;</label>
+      <button id="gps" type="button" title="Usar minha localização">📍 Minha localização</button>
+    </div>
+    <div class="campo">
+      <label for="hora">Dia / hora</label>
+      <select id="hora"></select>
+    </div>
+    <button id="buscar">Buscar vento</button>
+  </div>
+  <div id="status"></div>
+</div>
+
+<div class="card" id="resultado" style="display:none">
+  <div class="meta" id="meta"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Altura</th>
+        <th>Vai p/</th>
+        <th>Direção</th>
+        <th>Vel.</th>
+        <th>Confiança</th>
+      </tr>
+    </thead>
+    <tbody id="linhas"></tbody>
+  </table>
+
+  <details>
+    <summary>Ver os 3 modelos separados</summary>
+    <div class="modelos-tab" id="tabModelos"></div>
+  </details>
+
+  <div class="legenda">
+    <b>Seta / “Vai p/”</b> = para onde o vento empurra a pipa (a pipa fica do lado que a seta aponta).
+    <b>“Vem de”</b> = costas para essa direção na hora de soltar.
+    <b>Confiança</b> = concordância entre os 3 modelos na direção:
+    <span class="conf alta">ALTA ≤20°</span> <span class="conf media">MÉDIA ≤45°</span> <span class="conf baixa">BAIXA &gt;45°</span>.
+    Velocidades em km/h. Alturas acima do solo (AGL).
+  </div>
+</div>
+
+<footer>Dados: open-meteo.com · previsão, confira as condições no local</footer>
+</div>
+
+<script>
+const MODELOS=[
+  {id:'icon_seamless', nome:'ICON',  agl:[10,80,120,180], hpa:[950,925,900,850]},
+  {id:'gfs_seamless',  nome:'GFS',   agl:[10,80],         hpa:[975,950,925,900,850]},
+  {id:'ecmwf_ifs025',  nome:'ECMWF', agl:[10],            hpa:[1000,925,850]}
+];
+const ALVOS=[0,100,200,300,400,500]; // m AGL
+
+// ---------- utilidades ----------
+const rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
+function toUV(dirFrom,spd){ // dir meteorológica (vem de) -> componentes u,v
+  const a=rad(dirFrom);
+  return [-spd*Math.sin(a), -spd*Math.cos(a)];
+}
+function fromUV(u,v){
+  const spd=Math.hypot(u,v);
+  let dir=(deg(Math.atan2(-u,-v))+360)%360; // vem de
+  return [dir,spd];
+}
+function card(d){ // ponto cardeal a partir de "vem de"
+  const c=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+  return c[Math.round(d/22.5)%16];
+}
+function spreadDir(dirs){ // maior diferença angular entre modelos
+  let m=0;
+  for(let i=0;i<dirs.length;i++)for(let j=i+1;j<dirs.length;j++){
+    let d=Math.abs(dirs[i]-dirs[j]); if(d>180)d=360-d; if(d>m)m=d;
+  }
+  return m;
+}
+
+// ---------- seletor de hora ----------
+const selHora=document.getElementById('hora');
+(function(){
+  const agora=new Date();
+  const dias=['dom','seg','ter','qua','qui','sex','sáb'];
+  for(let h=0;h<48;h++){
+    const t=new Date(agora.getTime()+h*3600e3);
+    t.setMinutes(0,0,0);
+    const iso=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')
+      +'T'+String(t.getHours()).padStart(2,'0')+':00';
+    const rot=(h===0?'Agora — ':'')+dias[t.getDay()]+' '+String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')
+      +' '+String(t.getHours()).padStart(2,'0')+'h';
+    const op=document.createElement('option');
+    op.value=iso; op.textContent=rot;
+    selHora.appendChild(op);
+  }
+})();
+
+// ---------- busca ----------
+const btn=document.getElementById('buscar');
+const status_=document.getElementById('status');
+btn.addEventListener('click',buscar);
+
+// ---------- localização automática ----------
+const btnGps=document.getElementById('gps');
+btnGps.addEventListener('click',()=>{
+  if(!navigator.geolocation){
+    status_.textContent='Este navegador não tem GPS/localização.';status_.className='erro';return;
+  }
+  btnGps.disabled=true; status_.className=''; status_.textContent='Pegando sua localização…';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      document.getElementById('lat').value=pos.coords.latitude.toFixed(2);
+      document.getElementById('lon').value=pos.coords.longitude.toFixed(2);
+      btnGps.disabled=false;
+      status_.textContent='Localização preenchida. Agora é só buscar o vento.';
+    },
+    err=>{
+      btnGps.disabled=false; status_.className='erro';
+      status_.textContent=err.code===1
+        ?'Permissão negada — libere a localização no navegador.'
+        :'Não consegui pegar a localização ('+err.message+').';
+    },
+    {enableHighAccuracy:false,timeout:10000,maximumAge:300000}
+  );
+});
+
+async function buscar(){
+  const lat=parseFloat(document.getElementById('lat').value);
+  const lon=parseFloat(document.getElementById('lon').value);
+  if(isNaN(lat)||isNaN(lon)){status_.textContent='Coordenada inválida.';status_.className='erro';return;}
+  btn.disabled=true; status_.className=''; status_.textContent='Buscando os 3 modelos…';
+
+  try{
+    const settled=await Promise.allSettled(MODELOS.map(m=>{
+      const vars=[];
+      m.agl.forEach(h=>vars.push(`wind_speed_${h}m`,`wind_direction_${h}m`));
+      m.hpa.forEach(p=>vars.push(`wind_speed_${p}hPa`,`wind_direction_${p}hPa`,`geopotential_height_${p}hPa`));
+      return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+        +`&hourly=${vars.join(',')}&models=${m.id}`
+        +`&wind_speed_unit=kmh&timezone=America%2FSao_Paulo&forecast_days=3`)
+        .then(r=>{if(!r.ok)throw new Error(m.nome+' HTTP '+r.status);return r.json();})
+        .then(j=>({modelo:m,json:j}));
+    }));
+    const ok=settled.filter(s=>s.status==='fulfilled').map(s=>s.value);
+    if(ok.length===0)throw new Error('nenhum modelo respondeu');
+    render(ok,lat,lon);
+    const falhas=settled.filter(s=>s.status==='rejected').length;
+    status_.textContent=falhas?`Atenção: ${falhas} modelo(s) fora do ar, mostrando os demais.`:'';
+  }catch(e){
+    status_.textContent='Erro ao buscar: '+e.message+' (verifique a internet)';
+    status_.className='erro';
+  }finally{btn.disabled=false;}
+}
+
+// ---------- perfil por modelo ----------
+function perfilModelo(modelo,json,idxHora){
+  const elev=json.elevation??0;
+  const h=json.hourly;
+  const pontos=[];
+  // alturas fixas AGL
+  modelo.agl.forEach(agl=>{
+    const s=h[`wind_speed_${agl}m`]?.[idxHora];
+    const d=h[`wind_direction_${agl}m`]?.[idxHora];
+    if(s!=null&&d!=null)pontos.push({agl,dir:d,spd:s});
+  });
+  // níveis de pressão -> AGL via geopotencial
+  modelo.hpa.forEach(p=>{
+    const s=h[`wind_speed_${p}hPa`]?.[idxHora];
+    const d=h[`wind_direction_${p}hPa`]?.[idxHora];
+    const g=h[`geopotential_height_${p}hPa`]?.[idxHora];
+    if(s!=null&&d!=null&&g!=null){
+      const agl=g-elev;
+      if(agl>-60&&agl<1200)pontos.push({agl,dir:d,spd:s});
+    }
+  });
+  pontos.sort((a,b)=>a.agl-b.agl);
+  if(pontos.length<2)return null;
+
+  // interpola em u,v para cada alvo
+  return ALVOS.map(alvo=>{
+    const z=Math.max(alvo,pontos[0].agl); // 0 m usa a camada mais baixa disponível (10 m)
+    let i=0;
+    while(i<pontos.length-1&&pontos[i+1].agl<z)i++;
+    const a=pontos[i], b=pontos[Math.min(i+1,pontos.length-1)];
+    let u,v;
+    if(a===b||b.agl===a.agl){[u,v]=toUV(a.dir,a.spd);}
+    else{
+      const f=Math.min(Math.max((z-a.agl)/(b.agl-a.agl),0),1);
+      const [ua,va]=toUV(a.dir,a.spd),[ub,vb]=toUV(b.dir,b.spd);
+      u=ua+f*(ub-ua); v=va+f*(vb-va);
+    }
+    const [dir,spd]=fromUV(u,v);
+    return {alvo,dir,spd};
+  });
+}
+
+// ---------- render ----------
+function seta(dirVai,spd){
+  // pipinha apontando para onde o vento vai; cor pela velocidade
+  const cor=spd<12?'var(--pipa-verde)':spd<25?'var(--pipa-amarelo)':'var(--pipa-vermelho)';
+  return `<svg class="seta-pipa" width="30" height="30" viewBox="-15 -15 30 30" style="transform:rotate(${dirVai}deg)">
+    <polygon points="0,-11 6,-2 0,7 -6,-2" fill="${cor}"/>
+    <path d="M0,7 q-2.5,2.5 0,4 q2.5,1.5 0,3" stroke="${cor}" stroke-width="1.4" fill="none"/>
+  </svg>`;
+}
+
+function render(pares,lat,lon){
+  const iso=selHora.value;
+  const idx=pares[0].json.hourly.time.indexOf(iso);
+  if(idx<0){status_.textContent='Hora fora da janela de previsão.';status_.className='erro';return;}
+
+  const validos=pares
+    .map(p=>({nome:p.modelo.nome,perfil:perfilModelo(p.modelo,p.json,idx)}))
+    .filter(p=>p.perfil);
+  if(validos.length===0){status_.textContent='Sem dados de vento para essa hora.';status_.className='erro';return;}
+  const perfis=validos.map(p=>p.perfil);
+  const nomes=validos.map(p=>p.nome);
+  const elev=pares[0].json.elevation??0;
+
+  document.getElementById('meta').innerHTML=
+    `<b>${selHora.options[selHora.selectedIndex].textContent.replace('Agora — ','')}</b> · `
+    +`${lat.toFixed(2)}, ${lon.toFixed(2)} · elevação do terreno: <b>${Math.round(elev)} m</b> · `
+    +`consenso de ${perfis.length} modelos`;
+
+  const tbody=document.getElementById('linhas');
+  tbody.innerHTML='';
+  const linhasModelos=[];
+
+  // do topo (500) para o chão, perfil natural
+  [...ALVOS].reverse().forEach((alvo,ri)=>{
+    const porModelo=perfis.map(p=>p[ALVOS.indexOf(alvo)]);
+    // média vetorial
+    let su=0,sv=0;
+    porModelo.forEach(x=>{const[u,v]=toUV(x.dir,x.spd);su+=u;sv+=v;});
+    const [dirVem,spd]=fromUV(su/porModelo.length,sv/porModelo.length);
+    const dirVai=(dirVem+180)%360;
+    const sp=spreadDir(porModelo.map(x=>x.dir));
+    const cls=sp<=20?'alta':sp<=45?'media':'baixa';
+    const rot=sp<=20?'ALTA':sp<=45?'MÉDIA':'BAIXA';
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="alt">${alvo} m${alvo===0?'<small>solo (10 m)</small>':''}</td>
+      <td>${seta(dirVai,spd)}</td>
+      <td class="dir-num">vai p/ <b>${Math.round(dirVai)}° ${card(dirVai)}</b><br>vem de ${Math.round(dirVem)}° ${card(dirVem)}</td>
+      <td class="vel">${spd.toFixed(1)}<small> km/h</small></td>
+      <td><span class="conf ${cls}">${rot} ${Math.round(sp)}°</span></td>`;
+    tbody.appendChild(tr);
+
+    linhasModelos.push({alvo,porModelo});
+  });
+
+  // tabela por modelo
+  let ht='<table><thead><tr><th>Altura</th>';
+  nomes.forEach(n=>ht+=`<th colspan="2">${n}</th>`);
+  ht+='</tr><tr><th></th>'+nomes.map(()=>'<th>vem de</th><th>km/h</th>').join('')+'</tr></thead><tbody>';
+  linhasModelos.forEach(l=>{
+    ht+=`<tr><td class="alt">${l.alvo} m</td>`;
+    l.porModelo.forEach(x=>{
+      ht+=`<td>${Math.round(x.dir)}° ${card(x.dir)}</td><td>${x.spd.toFixed(1)}</td>`;
+    });
+    ht+='</tr>';
+  });
+  ht+='</tbody></table>';
+  document.getElementById('tabModelos').innerHTML=ht;
+
+  document.getElementById('resultado').style.display='block';
+}
+</script>
+</body>
+</html>
